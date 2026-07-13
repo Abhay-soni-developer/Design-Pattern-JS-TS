@@ -166,9 +166,3 @@ export class Filter {
     return items.filter((item) => specs.isSatisfied(item));
   }
 }
-
-console.log(
-  new ColorSpecification("Black")
-    .or(new ColorSpecification("Blue"))
-    .and(new SizeSpecification(SIZES[3])),
-);
