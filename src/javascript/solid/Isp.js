@@ -30,6 +30,7 @@ class AccountReport {
 
 // now we can remove unwanted method from this class
 // which we were forced to implement when we extended Payment gateway
+// multiple inheritence not supported in javascript , below is invalid syntax
 class UpiGateway extends Payable, Refundable {
   pay() {}
   refund() {}
