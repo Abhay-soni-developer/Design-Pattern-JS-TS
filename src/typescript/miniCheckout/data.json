@@ -1,0 +1,35 @@
+{
+  "products": [
+    {
+      "id": "prod-001",
+      "name": "Mechanical Keyboard",
+      "price": 4500
+    },
+    {
+      "id": "prod-002",
+      "name": "Wireless Mouse",
+      "price": 1800
+    },
+    {
+      "id": "prod-003",
+      "name": "USB-C Hub",
+      "price": 3200
+    },
+    {
+      "id": "prod-004",
+      "name": "Laptop Stand",
+      "price": 2500
+    },
+    {
+      "id": "prod-005",
+      "name": "Noise-Cancelling Headphones",
+      "price": 8500
+    }
+  ],
+
+  "coupons": [
+    
+  ],
+
+  "carts": []
+}
