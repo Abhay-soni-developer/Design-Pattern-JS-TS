@@ -1,12 +1,30 @@
-import z from "zod";
+import { z } from "zod";
+import { Coupon } from "./types.js";
 
-export const couponValidator = z.object({
-  id: z.string().trim().min(4).max(8),
-  type: z.enum(["FlatPercentageDiscountStrategy", "FlatDiscountStrategy"]),
-  percentage: z.number(),
-  limitOnUse: z.number(),
+const couponBaseSchema = z.object({
+  code: z.string().trim().min(4).max(20),
   isActive: z.boolean(),
-  usedCount: z.number(),
-  params: z.object(),
-  strategy: z.null(),
+  usedCount: z.number().int().nonnegative(),
+  strategy: z.null().optional(),
 });
+
+const flatDiscountCouponSchema = couponBaseSchema.extend({
+  type: z.literal("FlatDiscountStrategy"),
+  limitOnUse: z.number().int().positive().nullable(),
+  params: z.object({
+    amount: z.number().positive(),
+  }),
+});
+
+const percentageDiscountCouponSchema = couponBaseSchema.extend({
+  type: z.literal("FlatPercentageDiscountStrategy"),
+  limitOnUse: z.number().int().positive().nullable(),
+  params: z.object({
+    percentage: z.number().min(0).max(100),
+  }),
+});
+
+export const couponValidator = z.discriminatedUnion<Coupon, Coupon>("type", [
+  flatDiscountCouponSchema,
+  percentageDiscountCouponSchema,
+]);

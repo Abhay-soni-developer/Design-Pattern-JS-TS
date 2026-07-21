@@ -56,26 +56,33 @@ export type DiscountProcessorResult = DiscountCalculatorResult & {
 
 export type DiscountCalculator = (amount: number) => DiscountCalculatorResult;
 
+export type FlatPercentageCouponParam = { percentage: number };
+export type FlatDiscountCouponParam = { amount: number };
+
+export type CouponParam = {
+  FlatPercentageCouponParam: FlatPercentageCouponParam;
+  FlatDiscountCouponParam: FlatDiscountCouponParam;
+};
 export type Coupon =
   | {
-      id: string;
+      code: string;
       type: "FlatPercentageDiscountStrategy";
       percentage: number;
-      limitOnUse: number;
+      limitOnUse: number | null;
       isActive: boolean;
       usedCount: number;
-      params: { amount: number };
-      strategy: null | IDiscountStrategy;
+      params: FlatPercentageCouponParam;
+      strategy?: null | IDiscountStrategy;
     }
   | {
-      id: string;
+      code: string;
       type: "FlatDiscountStrategy";
       percentage: number;
       limitOnUse: number;
       isActive: boolean;
       usedCount: number;
-      params: { percentage: number };
-      strategy: null | IDiscountStrategy;
+      params: FlatDiscountCouponParam;
+      strategy?: null | IDiscountStrategy;
     };
 
 export interface ICartRepository {
@@ -86,7 +93,7 @@ export interface ICartRepository {
   ): void;
   removeProductFromOwnerCart(ownerid: string, productId: string): boolean;
   getOwnerCart(ownerId: string): readonly ICartItem[];
-  clearCartByOwnderId(ownerId: string): void;
+  clearCartByOwnerId(ownerId: string): void;
   getAll(): ICart[];
 }
 
@@ -95,6 +102,7 @@ export interface ICouponRepository {
   incrementUsage(id: string): number;
   registerNewCoupon(coupon: Coupon): Coupon | undefined;
 }
+
 export interface IProductRepository {
   getAll(): Product[];
   getById(id: string): Product | undefined;
