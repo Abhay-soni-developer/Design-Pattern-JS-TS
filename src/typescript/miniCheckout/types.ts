@@ -4,11 +4,6 @@ export interface Product {
   price: number;
 }
 
-export interface OrderItem {
-  product: Product;
-  quantity: number;
-}
-
 export interface IUser {
   name: string;
   email: string; // unique
@@ -18,12 +13,29 @@ export interface IUser {
 export interface Order {
   id: string;
   customerEmail: string;
-  items: OrderItem[];
+  items: CheckoutItem[];
 }
 
 export interface IProductCatalog {
   getAll(): Product[];
   getById(id: string): Product | undefined;
+}
+
+export interface CheckoutItem {
+  productId: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+}
+
+export interface CheckoutResult {
+  ownerId: string;
+  items: CheckoutItem[];
+  subtotal: number;
+  discountAmount: number;
+  finalAmount: number;
+  appliedCouponCode?: string;
 }
 
 export interface ICartItem {
@@ -54,12 +66,10 @@ export type DiscountProcessorResult = DiscountCalculatorResult & {
   finalAmount: number;
 };
 
-export type CheckoutResult = DiscountProcessorResult;
-
 export type DiscountCalculator = (amount: number) => DiscountCalculatorResult;
 
 export type FlatPercentageCouponParam = { percentage: number };
-export type FlatDiscountCouponParam = { amount: number };
+export type FlatDiscountCouponParam = { discountAmount: number };
 
 export type CouponParam = {
   FlatPercentageCouponParam: FlatPercentageCouponParam;
@@ -67,10 +77,10 @@ export type CouponParam = {
 };
 
 export type Coupon = {
+  type: DiscountStrategyType;
   code: string;
   limitOnUse: number | null;
-  usedCount: number;
-  strategy?: null | IDiscountStrategy;
+  usageCount: number;
   isActive: boolean;
 } & (
   | {
@@ -79,10 +89,6 @@ export type Coupon = {
     }
   | {
       type: "FlatDiscountStrategy";
-      params: FlatDiscountCouponParam;
-    }
-  | {
-      type: "NoDiscountStrategy";
       params: FlatDiscountCouponParam;
     }
 );
@@ -102,7 +108,7 @@ export interface ICartRepository {
 export interface ICouponRepository {
   getByCode(code: string): Coupon | null;
   incrementUsage(id: string): number;
-  registerNewCoupon(coupon: Coupon): Coupon | null;
+  registerNewCoupon(coupon: Coupon): Coupon;
 }
 
 export interface IProductRepository {
@@ -114,3 +120,13 @@ export interface IProductRepository {
 export interface IDiscountStrategy {
   calculate: DiscountCalculator;
 }
+
+export type DiscountStrategyType =
+  "FlatDiscountStrategy" | "FlatPercentageDiscountStrategy";
+
+export type DiscountStrategyConstructor<Type extends DiscountStrategyType> =
+  new (params: Extract<Coupon, { type: Type }>["params"]) => IDiscountStrategy;
+
+export type DiscountStrategyRegistry = {
+  [Type in DiscountStrategyType]: DiscountStrategyConstructor<Type>;
+};

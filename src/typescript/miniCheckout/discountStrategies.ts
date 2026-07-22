@@ -3,30 +3,22 @@ import {
   CouponParam,
   DiscountCalculatorResult,
   DiscountProcessorResult,
+  DiscountStrategyConstructor,
+  DiscountStrategyRegistry,
+  DiscountStrategyType,
   FlatDiscountCouponParam,
   FlatPercentageCouponParam,
   IDiscountStrategy,
   Product,
 } from "./types.js";
 
-export class NoDiscountStrategy implements IDiscountStrategy {
-  constructor() {}
-
-  public calculate(amount: number): DiscountCalculatorResult {
-    return {
-      discountAmount: 0,
-      status: "success",
-    };
-  }
-}
-
 export class FlatDiscountStrategy implements IDiscountStrategy {
   maxDiscount: number;
 
   constructor(params: FlatDiscountCouponParam) {
-    this.maxDiscount = params.amount;
+    this.maxDiscount = params.discountAmount;
 
-    if (Number.isFinite(this.maxDiscount)) {
+    if (!Number.isFinite(this.maxDiscount)) {
       throw new RangeError("only finite and greater than 0 allowed");
     }
   }
@@ -60,23 +52,9 @@ export class FlatPercentageDiscountStrategy implements IDiscountStrategy {
   }
 }
 
-type DiscountStrategyType =
-  | "FlatDiscountStrategy"
-  | "FlatPercentageDiscountStrategy"
-  | "NoDiscountStrategy";
-
-type DiscountStrategyConstructor<Type extends DiscountStrategyType> = new (
-  params: Extract<Coupon, { type: Type }>["params"],
-) => IDiscountStrategy;
-
-type DiscountStrategyRegistry = {
-  [Type in DiscountStrategyType]: DiscountStrategyConstructor<Type>;
-};
-
 const discountStrategyRegistry = {
   FlatDiscountStrategy,
   FlatPercentageDiscountStrategy,
-  NoDiscountStrategy,
 } satisfies DiscountStrategyRegistry;
 
 export class DiscountStrategyFactory {
@@ -91,20 +69,23 @@ export class DiscountStrategyFactory {
     const Strategy = discountStrategyRegistry[
       className
     ] as DiscountStrategyConstructor<Type>;
+
     if (!Strategy) throw new Error("invalid className");
     return new Strategy(params);
   }
 }
 
 export class DiscountProcessor {
-  static process(
-    strategy: IDiscountStrategy,
-    amount: number,
-  ): DiscountProcessorResult {
+  static process(coupon: Coupon, amount: number): DiscountProcessorResult {
+    const discountStrategy = DiscountStrategyFactory.create(
+      coupon.type,
+      coupon.params,
+    );
+
     if (amount <= 0) {
       throw new Error("Amount must be greater than zero");
     }
-    const discount = strategy.calculate(amount);
+    const discount = discountStrategy.calculate(amount);
 
     return {
       originalAmount: amount,

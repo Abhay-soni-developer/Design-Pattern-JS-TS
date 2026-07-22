@@ -10,8 +10,9 @@ import {
 } from "./types.js";
 import { z } from "zod";
 import { couponValidator, normalizeCode } from "./utilities.js";
+import { CouponAlreadyExist, CouponDoesNotExist } from "./errors.js";
 
-class ProductRepository implements IProductRepository {
+export class ProductRepository implements IProductRepository {
   private products: Map<string, Product>;
 
   constructor(products: Product[]) {
@@ -29,7 +30,7 @@ class ProductRepository implements IProductRepository {
   }
 }
 
-class CouponRepository implements ICouponRepository {
+export class CouponRepository implements ICouponRepository {
   private coupons: Map<string, Coupon>;
 
   constructor(couponsData: Coupon[]) {
@@ -53,33 +54,29 @@ class CouponRepository implements ICouponRepository {
   incrementUsage(code: string): number {
     const coupon = this.coupons.get(normalizeCode(code));
     if (coupon) {
-      coupon.usedCount++;
-      return coupon.usedCount;
+      coupon.usageCount++;
+      return coupon.usageCount;
     }
     throw new CouponDoesNotExist();
   }
 
-  registerNewCoupon(coupon: Coupon): Coupon | null {
+  registerNewCoupon(coupon: Coupon): Coupon {
     const code = normalizeCode(coupon.code);
     if (this.coupons.has(normalizeCode(coupon.code)))
       throw new CouponAlreadyExist();
 
-    const validatedCoupon: Coupon = couponValidator.parse(coupon) as Coupon;
-    const saveCoupon = {
-      ...coupon,
-      code,
-    };
+    const validatedCoupon = couponValidator.parse(coupon) as Coupon;
+    validatedCoupon.code = code;
 
-    if (saveCoupon) {
-      this.coupons.set(normalizeCode(saveCoupon.code), saveCoupon);
-      return saveCoupon;
+    if (validatedCoupon) {
+      this.coupons.set(normalizeCode(validatedCoupon.code), validatedCoupon);
     }
 
-    return null;
+    return validatedCoupon;
   }
 }
 
-class CartRepository implements ICartRepository {
+export class CartRepository implements ICartRepository {
   private carts: Map<string, ICart>;
 
   constructor(cartsData: ICart[]) {
@@ -142,21 +139,12 @@ class CartRepository implements ICartRepository {
   }
 }
 
-const { products: productsData, coupons: couponsData, carts: cartsData } = data;
-const productRepo = new ProductRepository(productsData);
-const couponRepo = new CouponRepository(couponsData);
-const cartRepo = new CartRepository(cartsData);
-
-export { productRepo, couponRepo, cartRepo };
-
-export class CouponError extends Error {
-  constructor() {
-    super();
-    this.name = new.target.name;
-  }
-}
-
-export class CouponAlreadyExist extends CouponError {}
-export class CouponDoesNotExist extends CouponError {}
-export class CouponUsageLimitExceeded extends CouponError {}
-export class CouponExpired extends CouponError {}
+export const {
+  products: productsData,
+  coupons: couponsData,
+  carts: cartsData,
+} = data as {
+  products: Product[];
+  coupons: Coupon[];
+  carts: ICart[];
+};

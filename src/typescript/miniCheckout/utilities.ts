@@ -4,8 +4,7 @@ import { Coupon } from "./types.js";
 const couponBaseSchema = z.object({
   code: z.string().trim().min(4).max(20),
   isActive: z.boolean(),
-  usedCount: z.number().int().nonnegative(),
-  strategy: z.null().optional(),
+  usageCount: z.number().int().nonnegative(),
 });
 
 const flatDiscountCouponSchema = couponBaseSchema.extend({

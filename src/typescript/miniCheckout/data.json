@@ -27,9 +27,96 @@
     }
   ],
 
-  "coupons": [
-    
+  "carts": [
+    {
+      "ownerId": "user-1",
+      "items": [
+        {
+          "product": {
+            "id": "product-1",
+            "name": "Mechanical Keyboard",
+            "price": 4500
+          },
+          "quantity": 2
+        },
+        {
+          "product": {
+            "id": "product-2",
+            "name": "Wireless Mouse",
+            "price": 2000
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "ownerId": "user-2",
+      "items": [
+        {
+          "product": {
+            "id": "product-3",
+            "name": "USB-C Hub",
+            "price": 3000
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "ownerId": "user-3",
+      "items": []
+    }
   ],
-
-  "carts": []
+  "coupons": [
+    {
+      "code": "welcome500",
+      "type": "FlatDiscountStrategy",
+      "params": {
+        "discountAmount": 500
+      },
+      "isActive": true,
+      "usageCount": 0,
+      "limitOnUse": 100
+    },
+    {
+      "code": "save10",
+      "type": "FlatPercentageDiscountStrategy",
+      "params": {
+        "percentage": 10
+      },
+      "isActive": true,
+      "usageCount": 3,
+      "limitOnUse": 50
+    },
+    {
+      "code": "unlimited5",
+      "type": "FlatPercentageDiscountStrategy",
+      "params": {
+        "percentage": 5
+      },
+      "isActive": true,
+      "usageCount": 12,
+      "limitOnUse": null
+    },
+    {
+      "code": "exhausted20",
+      "type": "FlatPercentageDiscountStrategy",
+      "params": {
+        "percentage": 20
+      },
+      "isActive": true,
+      "usageCount": 10,
+      "limitOnUse": 10
+    },
+    {
+      "code": "inactive1000",
+      "type": "FlatDiscountStrategy",
+      "params": {
+        "discountAmount": 1000
+      },
+      "isActive": false,
+      "usageCount": 0,
+      "limitOnUse": 20
+    }
+  ]
 }
