@@ -54,6 +54,8 @@ export type DiscountProcessorResult = DiscountCalculatorResult & {
   finalAmount: number;
 };
 
+export type CheckoutResult = DiscountProcessorResult;
+
 export type DiscountCalculator = (amount: number) => DiscountCalculatorResult;
 
 export type FlatPercentageCouponParam = { percentage: number };
@@ -63,27 +65,27 @@ export type CouponParam = {
   FlatPercentageCouponParam: FlatPercentageCouponParam;
   FlatDiscountCouponParam: FlatDiscountCouponParam;
 };
-export type Coupon =
+
+export type Coupon = {
+  code: string;
+  limitOnUse: number | null;
+  usedCount: number;
+  strategy?: null | IDiscountStrategy;
+  isActive: boolean;
+} & (
   | {
-      code: string;
       type: "FlatPercentageDiscountStrategy";
-      percentage: number;
-      limitOnUse: number | null;
-      isActive: boolean;
-      usedCount: number;
       params: FlatPercentageCouponParam;
-      strategy?: null | IDiscountStrategy;
     }
   | {
-      code: string;
       type: "FlatDiscountStrategy";
-      percentage: number;
-      limitOnUse: number;
-      isActive: boolean;
-      usedCount: number;
       params: FlatDiscountCouponParam;
-      strategy?: null | IDiscountStrategy;
-    };
+    }
+  | {
+      type: "NoDiscountStrategy";
+      params: FlatDiscountCouponParam;
+    }
+);
 
 export interface ICartRepository {
   addProductToOwnerCart(
@@ -98,9 +100,9 @@ export interface ICartRepository {
 }
 
 export interface ICouponRepository {
-  getByCode(code: string): Coupon | undefined;
+  getByCode(code: string): Coupon | null;
   incrementUsage(id: string): number;
-  registerNewCoupon(coupon: Coupon): Coupon | undefined;
+  registerNewCoupon(coupon: Coupon): Coupon | null;
 }
 
 export interface IProductRepository {

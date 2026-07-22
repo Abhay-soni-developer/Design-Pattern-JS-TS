@@ -9,13 +9,24 @@ import {
   Product,
 } from "./types.js";
 
+export class NoDiscountStrategy implements IDiscountStrategy {
+  constructor() {}
+
+  public calculate(amount: number): DiscountCalculatorResult {
+    return {
+      discountAmount: 0,
+      status: "success",
+    };
+  }
+}
+
 export class FlatDiscountStrategy implements IDiscountStrategy {
   maxDiscount: number;
 
   constructor(params: FlatDiscountCouponParam) {
     this.maxDiscount = params.amount;
 
-    if (this.maxDiscount <= 0) {
+    if (Number.isFinite(this.maxDiscount)) {
       throw new RangeError("only finite and greater than 0 allowed");
     }
   }
@@ -50,7 +61,9 @@ export class FlatPercentageDiscountStrategy implements IDiscountStrategy {
 }
 
 type DiscountStrategyType =
-  "FlatDiscountStrategy" | "FlatPercentageDiscountStrategy";
+  | "FlatDiscountStrategy"
+  | "FlatPercentageDiscountStrategy"
+  | "NoDiscountStrategy";
 
 type DiscountStrategyConstructor<Type extends DiscountStrategyType> = new (
   params: Extract<Coupon, { type: Type }>["params"],
@@ -63,6 +76,7 @@ type DiscountStrategyRegistry = {
 const discountStrategyRegistry = {
   FlatDiscountStrategy,
   FlatPercentageDiscountStrategy,
+  NoDiscountStrategy,
 } satisfies DiscountStrategyRegistry;
 
 export class DiscountStrategyFactory {

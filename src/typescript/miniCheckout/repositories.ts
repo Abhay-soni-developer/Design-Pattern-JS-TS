@@ -1,5 +1,4 @@
 import data from "./data.json" with { type: "json" };
-import { DiscountStrategyFactory } from "./discountStrategies.js";
 import {
   Coupon,
   ICart,
@@ -10,7 +9,7 @@ import {
   Product,
 } from "./types.js";
 import { z } from "zod";
-import { couponValidator } from "./utilities.js";
+import { couponValidator, normalizeCode } from "./utilities.js";
 
 class ProductRepository implements IProductRepository {
   private products: Map<string, Product>;
@@ -41,15 +40,18 @@ class CouponRepository implements ICouponRepository {
     );
   }
 
-  getByCode(code: string): Coupon | undefined {
-    const coupon = this.coupons.get(CouponRepository.normalizeCode(code));
+  getByCode(code: string): Coupon | null {
+    const coupon = this.coupons.get(normalizeCode(code));
+
     if (coupon) {
       return { ...coupon };
     }
+
+    return null;
   }
 
-  incrementUsage(id: string): number {
-    const coupon = this.coupons.get(id);
+  incrementUsage(code: string): number {
+    const coupon = this.coupons.get(normalizeCode(code));
     if (coupon) {
       coupon.usedCount++;
       return coupon.usedCount;
@@ -57,24 +59,23 @@ class CouponRepository implements ICouponRepository {
     throw new CouponDoesNotExist();
   }
 
-  registerNewCoupon(coupon: Coupon): Coupon | undefined {
+  registerNewCoupon(coupon: Coupon): Coupon | null {
+    const code = normalizeCode(coupon.code);
+    if (this.coupons.has(normalizeCode(coupon.code)))
+      throw new CouponAlreadyExist();
+
     const validatedCoupon: Coupon = couponValidator.parse(coupon) as Coupon;
+    const saveCoupon = {
+      ...coupon,
+      code,
+    };
 
-    if (this.coupons.has(coupon.code)) throw new CouponAlreadyExist();
-
-    // validate coupon
-    if (validatedCoupon) {
-      coupon.strategy = null;
-      this.coupons.set(
-        CouponRepository.normalizeCode(coupon.code),
-        validatedCoupon,
-      );
-      return validatedCoupon;
+    if (saveCoupon) {
+      this.coupons.set(normalizeCode(saveCoupon.code), saveCoupon);
+      return saveCoupon;
     }
-  }
 
-  private static normalizeCode(code: string): string {
-    return code.trim().toLowerCase();
+    return null;
   }
 }
 
@@ -124,8 +125,11 @@ class CartRepository implements ICartRepository {
   }
 
   getOwnerCart(ownerId: string): readonly ICartItem[] {
-    if (this.carts.has(ownerId)) return [];
-    return (this.carts.get(ownerId) as ICart)?.items ?? [];
+    const cart = this.carts.get(ownerId);
+    if (cart) {
+      return cart.items;
+    }
+    return [];
   }
 
   clearCartByOwnerId(ownerId: string): void {
@@ -145,7 +149,14 @@ const cartRepo = new CartRepository(cartsData);
 
 export { productRepo, couponRepo, cartRepo };
 
-export class CouponAlreadyExist extends Error {}
-export class CouponDoesNotExist extends Error {}
-export class CouponUsageLimitExceeded extends Error {}
-export class CouponExpired extends Error {}
+export class CouponError extends Error {
+  constructor() {
+    super();
+    this.name = new.target.name;
+  }
+}
+
+export class CouponAlreadyExist extends CouponError {}
+export class CouponDoesNotExist extends CouponError {}
+export class CouponUsageLimitExceeded extends CouponError {}
+export class CouponExpired extends CouponError {}

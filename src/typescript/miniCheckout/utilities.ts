@@ -24,7 +24,11 @@ const percentageDiscountCouponSchema = couponBaseSchema.extend({
   }),
 });
 
-export const couponValidator = z.discriminatedUnion<Coupon, Coupon>("type", [
+export const couponValidator = z.discriminatedUnion("type", [
   flatDiscountCouponSchema,
   percentageDiscountCouponSchema,
 ]);
+
+export function normalizeCode(code: string): string {
+  return code.trim().toLowerCase();
+}
