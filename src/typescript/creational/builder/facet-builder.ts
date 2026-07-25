@@ -1,3 +1,5 @@
+import { Mutable } from "./builder.js";
+
 export interface IPersonalInfo {
   readonly firstName: string;
   readonly lastName: string;
@@ -73,8 +75,8 @@ export interface IEmployeeBuilder {
 }
 
 class Employee implements IEmployee {
-  firstName: string;
-  lastName: string;
+  readonly firstName: string;
+  readonly lastName: string;
   age: number;
   email?: string;
   phoneNumber?: string;
@@ -82,7 +84,7 @@ class Employee implements IEmployee {
   designation: string;
   department: string;
   salary: number;
-  joiningDate: Date;
+  readonly joiningDate: Date;
   country: string;
   state: string;
   city: string;
@@ -93,26 +95,33 @@ class Employee implements IEmployee {
     this.firstName = data.firstName;
     this.lastName = data.lastName;
     this.age = data.age;
-    this.email = data.email;
-    this.phoneNumber = data.phoneNumber;
 
     this.company = data.company;
     this.designation = data.designation;
     this.department = data.department;
     this.salary = data.salary;
-    this.joiningDate = data.joiningDate;
+    this.joiningDate = new Date(data.joiningDate);
 
     this.country = data.country;
     this.state = data.state;
     this.city = data.city;
-    this.street = data.street;
     this.zipCode = data.zipCode;
+
+    if (data.email !== undefined) {
+      this.email = data.email;
+    }
+    if (data.phoneNumber !== undefined) {
+      this.phoneNumber = data.phoneNumber;
+    }
+    if (data.street !== undefined) {
+      this.street = data.street;
+    }
   }
 }
 
 export class EmployeeProfileBuilder implements IEmployeeProfileBuilder {
   constructor(
-    private employee: Partial<IEmployee>,
+    private employee: Partial<Mutable<IEmployee>>,
     private readonly root: IEmployeeBuilder,
   ) {}
 
@@ -155,7 +164,7 @@ export class EmployeeProfileBuilder implements IEmployeeProfileBuilder {
 
 export class EmployeeEmploymentBuilder implements IEmployeeEmploymentBuilder {
   constructor(
-    private employee: Partial<IEmployee>,
+    private employee: Partial<Mutable<IEmployee>>,
     private readonly root: IEmployeeBuilder,
   ) {}
 
@@ -197,7 +206,7 @@ export class EmployeeEmploymentBuilder implements IEmployeeEmploymentBuilder {
 
 export class EmployeeAddressBuilder implements IEmployeeAddressBuilder {
   constructor(
-    private employee: Partial<IEmployee>,
+    private employee: Partial<Mutable<IEmployee>>,
     private readonly root: IEmployeeBuilder,
   ) {}
 
@@ -240,7 +249,7 @@ export class EmployeeAddressBuilder implements IEmployeeAddressBuilder {
 }
 
 export class EmployeeBuilder implements IEmployeeBuilder {
-  private readonly employee: Partial<IEmployee>;
+  private readonly employee: Partial<Mutable<IEmployee>>;
   readonly personal: IEmployeeProfileBuilder;
   readonly employment: IEmployeeEmploymentBuilder;
   readonly address: IEmployeeAddressBuilder;

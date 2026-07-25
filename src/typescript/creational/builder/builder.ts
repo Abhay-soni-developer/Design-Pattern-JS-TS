@@ -83,8 +83,6 @@ export class Computer {
   }
 }
 
-
-
 export class ComputerBuilderError extends Error {
   constructor(message: string) {
     super(message);
@@ -122,3 +120,6 @@ export class InvalidStorage extends ComputerBuilderError {
   }
 }
 
+export type Mutable<T> = {
+  -readonly [K in keyof T]: T[K];
+};
