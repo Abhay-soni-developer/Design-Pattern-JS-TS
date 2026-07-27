@@ -10,6 +10,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "dev": "tsx watch src/index.ts",
+    "dev-no-watch": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },
@@ -25,6 +26,8 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "dotenv": "^17.4.2"
+    "@lokidb/loki": "^2.1.0",
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
   }
 }
