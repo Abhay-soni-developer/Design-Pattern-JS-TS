@@ -65,62 +65,72 @@ export class CachedUserRepository implements IUserRepository {
   ) {}
 
   async getById(userId: string): Promise<User> {
-    try {
-      const cachedUser = this.userCacheRepo.get(userId);
+    const cachedUser = this.userCacheRepo.get(userId);
 
-      if (
-        cachedUser &&
-        cachedUser.status === "NOT_FOUND" &&
-        cachedUser.expiresAt > Date.now()
-      ) {
-        throw new UserNotFound(userId);
-      }
-
-      if (
-        cachedUser &&
-        cachedUser.status === "FOUND" &&
-        cachedUser.expiresAt > Date.now()
-      ) {
-        return cachedUser.value;
-      }
-
-      const pendingUserPromise = this.userPendingRepo.get(userId);
-      
-      if (pendingUserPromise) {
-        return pendingUserPromise;
-      }
-
-      const cacheVersion = this.cacheVersionRegistry.get(userId) ?? 0;
-      const pendingUser = this.userRepository.getById(userId);
-
-      pendingUser.then((user) => this.commitUserToCache(user, cacheVersion));
-      return pendingUser;
-    } catch (err) {
-      if (err instanceof UserNotFound) {
-        this.userCacheRepo.set(userId, {
-          status: "NOT_FOUND",
-          value: null,
-          expiresAt: Date.now() + this.ttlMs,
-        });
-      }
-      console.log("error", err);
+    if (
+      cachedUser &&
+      cachedUser.status === "NOT_FOUND" &&
+      cachedUser.expiresAt > Date.now()
+    ) {
+      throw new UserNotFound(userId);
     }
+
+    if (
+      cachedUser &&
+      cachedUser.status === "FOUND" &&
+      cachedUser.expiresAt > Date.now()
+    ) {
+      return cachedUser.value;
+    }
+
+    const pendingUserPromise = this.userPendingRepo.get(userId);
+
+    if (pendingUserPromise) {
+      return pendingUserPromise;
+    }
+
+    const cacheVersion = this.cacheVersionRegistry.get(userId) ?? 0;
+    const pendingUser = this.userRepository.getById(userId);
+    this.userPendingRepo.set(userId, pendingUser);
+
+    pendingUser
+      .then((user) => this.commitUserToCache(user, cacheVersion))
+      .catch((err) => {
+        if (err instanceof UserNotFound) {
+          this.userCacheRepo.set(userId, {
+            status: "NOT_FOUND",
+            value: null,
+            expiresAt: Date.now() + this.ttlMs,
+          });
+        }
+      })
+      .finally(() => {
+        this.userPendingRepo.delete(userId);
+      });
+
+    return pendingUser;
   }
 
   updateUser(
     userId: string,
     updatedUserFields: Omit<User, "id">,
   ): Promise<User> {
-    const cacheUserVersion = this.cacheVersionRegistry.get(userId) ?? 0;
     const updateUserPromise = this.userRepository.updateUser(
       userId,
       updatedUserFields,
     );
 
-    this.userPendingRepo.set(userId, updateUserPromise);
-
     updateUserPromise
-      .then((user) => this.commitUserToCache(user, cacheUserVersion))
+      .then((user) => {
+        const version = this.cacheVersionRegistry.get(userId) ?? 0;
+        this.cacheVersionRegistry.set(userId, version + 1);
+
+        this.userCacheRepo.set(user.id, {
+          status: "FOUND",
+          value: user,
+          expiresAt: Date.now() + this.ttlMs,
+        });
+      })
       .catch((err) => {
         if (err instanceof UserNotFound) {
           this.userCacheRepo.set(userId, {
@@ -130,6 +140,9 @@ export class CachedUserRepository implements IUserRepository {
           });
         }
         console.log(err);
+      })
+      .finally(() => {
+        this.userPendingRepo.delete(userId);
       });
 
     return updateUserPromise;
@@ -137,16 +150,14 @@ export class CachedUserRepository implements IUserRepository {
 
   private commitUserToCache(user: User, oldCacheVersion: number): void {
     const latestCacheUserVersion = this.cacheVersionRegistry.get(user.id) ?? 0;
-
+    // stop if version changes
     if (oldCacheVersion !== latestCacheUserVersion) return;
+    // save user to cache
     this.userCacheRepo.set(user.id, {
       status: "FOUND",
       value: user,
       expiresAt: Date.now() + this.ttlMs,
     });
-
-    this.cacheVersionRegistry.set(user.id, latestCacheUserVersion + 1);
-    this.userPendingRepo.delete(user.id);
   }
 }
 
