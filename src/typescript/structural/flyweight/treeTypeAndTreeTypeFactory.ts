@@ -1,3 +1,7 @@
+interface Drawable {
+  draw(): void;
+}
+
 class TreeType {
   constructor(
     public readonly name: string,
@@ -14,11 +18,11 @@ class TreeType {
   }
 }
 
-class Tree {
+class Tree implements Drawable {
   constructor(
+    public x: number,
+    public y: number,
     public readonly treeType: TreeType,
-    public readonly x: number,
-    public readonly y: number,
   ) {}
 
   draw() {
@@ -32,7 +36,7 @@ class Tree {
 }
 
 class TreeTypeFactory {
-  private types: Map<string, TreeType> = new Map();
+  private readonly types: Map<string, TreeType> = new Map();
 
   getTreeType(name: string, color: string, texture: string): TreeType {
     const key = JSON.stringify([name, color, texture]);
@@ -41,5 +45,31 @@ class TreeTypeFactory {
     const newTreeType = new TreeType(name, color, texture);
     this.types.set(key, newTreeType);
     return newTreeType;
+  }
+}
+
+class Forest implements Drawable {
+  private readonly trees: Tree[];;
+
+  constructor(private readonly treeTypeFactory: TreeTypeFactory) {
+    this.trees = [];
+  }
+
+  plantTree(
+    x: number,
+    y: number,
+    name: string,
+    color: string,
+    texture: string,
+  ): void {
+    const treeType = this.treeTypeFactory.getTreeType(name, color, texture);
+    const tree = new Tree(x, y, treeType);
+    this.trees.push(tree);
+  }
+
+  draw(): void {
+    for (const tree of this.trees) {
+      tree.draw();
+    }
   }
 }
