@@ -11,7 +11,7 @@ import {
 
 class PlainEnglishSpecificationTranslator {
   translate(specification) {
-    if (specification === Specification) {
+    if (!(specification instanceof Specification)) {
       throw new Error(
         "specification should be an instance of Specification class",
       );
@@ -68,8 +68,8 @@ class PlainEnglishSpecificationTranslator {
     return `color can be one of these ${specification.colors.join(",")}`;
   }
 
-  translateAnd(leftspec, rightSpec) {
-    return `(${this.translate(leftspec)} AND ${this.translate(rightSpec)})`;
+  translateAnd(leftSpec, rightSpec) {
+    return `(${this.translate(leftSpec)} AND ${this.translate(rightSpec)})`;
   }
 
   translateOr(leftspec, rightSpec) {
@@ -77,7 +77,7 @@ class PlainEnglishSpecificationTranslator {
   }
 
   translateNot(specification) {
-    return "Not " + this.translate(specification.spec, true);
+    return `NOT   ${this.translate(specification.spec)}`;
   }
 }
 
