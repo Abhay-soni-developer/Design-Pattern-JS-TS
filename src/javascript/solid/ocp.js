@@ -2,6 +2,8 @@
 
 import { ORDER_TYPE, ITEMS, CATEGORIES, SIZES } from "./ecommerce.js";
 
+
+// Specification Pattern
 export class Specification {
   constructor() {
     if (new.target === Specification) {

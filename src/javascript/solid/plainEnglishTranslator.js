@@ -9,6 +9,7 @@ import {
   NotCombinator,
 } from "./ocp.js";
 
+// Type-Dispatching translator --> Very similar to Visitor Pattern
 class PlainEnglishSpecificationTranslator {
   translate(specification) {
     if (!(specification instanceof Specification)) {
